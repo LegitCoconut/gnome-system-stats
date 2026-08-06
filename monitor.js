@@ -4,7 +4,13 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 
-const read = path => new TextDecoder().decode(GLib.file_get_contents(path)[1]);
+Gio._promisify(Gio.File.prototype, 'load_contents_async');
+Gio._promisify(Gio.File.prototype, 'query_filesystem_info_async');
+
+const read = async path => {
+    const [bytes] = await Gio.File.new_for_path(path).load_contents_async(null);
+    return new TextDecoder().decode(bytes);
+};
 
 /* ---------- RAM ---------- */
 
@@ -17,7 +23,7 @@ export function formatRam(meminfo) {
     return `${(used / KB_IN_GIB).toFixed(1)}/${(total / KB_IN_GIB).toFixed(1)}G`;
 }
 
-export const readRam = () => formatRam(read('/proc/meminfo'));
+export const readRam = async () => formatRam(await read('/proc/meminfo'));
 
 /* ---------- Network ---------- */
 
@@ -41,8 +47,8 @@ export function parseNetDev(text, keep = isPhysical) {
     return {rx, tx};
 }
 
-export const readNet = () => ({
-    ...parseNetDev(read('/proc/net/dev')),
+export const readNet = async () => ({
+    ...parseNetDev(await read('/proc/net/dev')),
     time: GLib.get_monotonic_time(),
 });
 
@@ -75,10 +81,10 @@ export function formatDisk(used, size) {
     return `${g(used)}/${g(size)}G`;
 }
 
-export function readDisk(mount) {
+export async function readDisk(mount) {
     try {
-        const info = Gio.File.new_for_path(mount || '/').query_filesystem_info(
-            'filesystem::size,filesystem::used,filesystem::free', null);
+        const info = await Gio.File.new_for_path(mount || '/').query_filesystem_info_async(
+            'filesystem::size,filesystem::used,filesystem::free', GLib.PRIORITY_DEFAULT, null);
         const size = info.get_attribute_uint64('filesystem::size');
         const used = info.get_attribute_uint64('filesystem::used') ||
             size - info.get_attribute_uint64('filesystem::free');
@@ -89,7 +95,7 @@ export function readDisk(mount) {
 }
 
 // Mounted real filesystems, for the disk picker in prefs.
-export function listMounts(text = read('/proc/mounts')) {
+export function parseMounts(text) {
     const seen = new Set();
     const out = [];
     for (const line of text.split('\n')) {
@@ -101,3 +107,5 @@ export function listMounts(text = read('/proc/mounts')) {
     }
     return out;
 }
+
+export const listMounts = async () => parseMounts(await read('/proc/mounts'));

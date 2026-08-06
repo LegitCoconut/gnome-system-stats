@@ -3,13 +3,22 @@
 
 // gjs -m test.js   → unit checks, then a 6s live sample
 import GLib from 'gi://GLib';
+import System from 'system';
 import {formatRam, parseNetDev, formatRate, rates, readNet, readRam,
-        formatDisk, readDisk, listMounts} from './monitor.js';
+        formatDisk, readDisk, parseMounts, listMounts} from './monitor.js';
 
 const eq = (got, want, what) => {
     if (got !== want)
         throw new Error(`${what}: expected ${want}, got ${got}`);
 };
+
+const sleep = secs => new Promise(resolve =>
+    GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, secs, () => {
+        resolve();
+        return GLib.SOURCE_REMOVE;
+    }));
+
+async function main() {
 
 eq(formatRam(`MemTotal:       16777216 kB
 MemFree:         1048576 kB
@@ -42,10 +51,10 @@ eq(rates({rx: 500, tx: 0, time: 0}, {rx: 0, tx: 0, time: 1e6}).rx, 0, 'reset');
 const GB = 1024 ** 3;
 eq(formatDisk(33 * GB, 468 * GB), '33.0/468G', 'disk big');
 eq(formatDisk(6.4 * GB, 60 * GB), '6.4/60.0G', 'disk small');
-eq(readDisk('/nope/not/here'), '--', 'disk missing');
+eq(await readDisk('/nope/not/here'), '--', 'disk missing');
 
 // loop devices (snaps) must not clutter the picker
-const mounts = listMounts(`/dev/nvme0n1p2 / ext4 rw 0 0
+const mounts = parseMounts(`/dev/nvme0n1p2 / ext4 rw 0 0
 /dev/loop3 /snap/core20/2866 squashfs ro 0 0
 tmpfs /run tmpfs rw 0 0
 /dev/nvme0n1p1 /boot/efi vfat rw 0 0
@@ -53,20 +62,26 @@ tmpfs /run tmpfs rw 0 0
 eq(mounts.length, 2, 'mount count');
 eq(mounts[0].mount, '/', 'mount path');
 
-print(`unit checks ok — mounts: ${listMounts().map(m => m.dev).join(', ')}`);
+print(`unit checks ok — mounts: ${(await listMounts()).map(m => m.dev).join(', ')}`);
 print('live sample (6s):');
-let prev = readNet();
-let n = 0;
-const loop = GLib.MainLoop.new(null, false);
-GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
-    const now = readNet();
+let prev = await readNet();
+for (let i = 0; i < 6; i++) {
+    await sleep(1);
+    const now = await readNet();
     const s = rates(prev, now);
     prev = now;
-    print(`  ↑ ${formatRate(s.tx)} ↓ ${formatRate(s.rx)} | ${readRam()} | ${readDisk('/')}`);
-    if (++n >= 6) {
-        loop.quit();
-        return GLib.SOURCE_REMOVE;
-    }
-    return GLib.SOURCE_CONTINUE;
-});
+    print(`  ↑ ${formatRate(s.tx)} ↓ ${formatRate(s.rx)} | ${await readRam()} | ${await readDisk('/')}`);
+}
+
+}
+
+const loop = GLib.MainLoop.new(null, false);
+let failed = false;
+main()
+    .catch(e => {
+        failed = true;
+        printerr(e);
+    })
+    .finally(() => loop.quit());
 loop.run();
+System.exit(failed ? 1 : 0);

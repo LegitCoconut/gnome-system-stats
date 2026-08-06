@@ -13,7 +13,6 @@ export default class SystemUsageExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
         this._indicators = [];
-        this._prev = readNet();
         this._build();
 
         this._settingsId = this._settings.connect('changed', () => this._build());
@@ -52,16 +51,26 @@ export default class SystemUsageExtension extends Extension {
     }
 
     _update() {
-        const now = readNet();
-        const r = rates(this._prev, now);
+        if (this._busy) // a tick is still reading; skip rather than interleave
+            return;
+        this._busy = true;
+        this._refresh().catch(logError).finally(() => (this._busy = false));
+    }
+
+    async _refresh() {
+        const now = await readNet();
+        const r = this._prev ? rates(this._prev, now) : {rx: 0, tx: 0};
         this._prev = now;
 
         const text = {
             net: `↑ ${formatRate(r.tx)} ↓ ${formatRate(r.rx)}`,
-            ram: readRam(),
+            ram: await readRam(),
         };
-        if (this._settings.get_boolean('show-disk'))
-            text.disk = readDisk(this._settings.get_string('disk-mount'));
+        if (this._settings?.get_boolean('show-disk'))
+            text.disk = await readDisk(this._settings.get_string('disk-mount'));
+
+        if (!this._settings) // disabled while we were reading
+            return;
 
         for (const ind of this._indicators)
             ind.label.text = ind.tiles.map(t => text[t]).join('  |  ');

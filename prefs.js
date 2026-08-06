@@ -20,7 +20,7 @@ function positionRow(settings, key, title) {
 }
 
 export default class SystemUsagePreferences extends ExtensionPreferences {
-    fillPreferencesWindow(window) {
+    async fillPreferencesWindow(window) {
         const settings = this.getSettings();
         const page = new Adw.PreferencesPage();
         window.add(page);
@@ -52,7 +52,7 @@ export default class SystemUsagePreferences extends ExtensionPreferences {
         settings.bind('show-disk', showDisk, 'active', Gio.SettingsBindFlags.DEFAULT);
         disk.add(showDisk);
 
-        const mounts = listMounts();
+        const mounts = await listMounts();
         const mountRow = new Adw.ComboRow({
             title: 'Disk',
             model: Gtk.StringList.new(mounts.map(m => `${m.dev} — ${m.mount}`)),
