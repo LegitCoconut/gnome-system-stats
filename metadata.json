@@ -1,0 +1,8 @@
+{
+  "uuid": "system-usage@legitcoconut",
+  "name": "System Usage",
+  "description": "Top bar stats: upload/download speed (hardware interfaces only), used/total RAM, and optional disk usage. Tiles can be split and placed on either side of the panel.",
+  "shell-version": ["50"],
+  "settings-schema": "org.gnome.shell.extensions.system-usage",
+  "url": "https://github.com/legitcoconut/gnome-system-stats"
+}

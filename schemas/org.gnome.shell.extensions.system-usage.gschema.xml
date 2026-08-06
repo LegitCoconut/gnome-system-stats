@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <enum id="org.gnome.shell.extensions.system-usage.position">
+    <value value="0" nick="left"/>
+    <value value="1" nick="center"/>
+    <value value="2" nick="right"/>
+  </enum>
+  <schema id="org.gnome.shell.extensions.system-usage"
+          path="/org/gnome/shell/extensions/system-usage/">
+    <key name="split" type="b">
+      <default>false</default>
+      <summary>Split stats into separate tiles</summary>
+    </key>
+    <key name="position" enum="org.gnome.shell.extensions.system-usage.position">
+      <default>'right'</default>
+      <summary>Panel side for the combined tile</summary>
+    </key>
+    <key name="net-position" enum="org.gnome.shell.extensions.system-usage.position">
+      <default>'right'</default>
+      <summary>Panel side for the network tile when split</summary>
+    </key>
+    <key name="ram-position" enum="org.gnome.shell.extensions.system-usage.position">
+      <default>'right'</default>
+      <summary>Panel side for the RAM tile when split</summary>
+    </key>
+    <key name="disk-position" enum="org.gnome.shell.extensions.system-usage.position">
+      <default>'right'</default>
+      <summary>Panel side for the disk tile when split</summary>
+    </key>
+    <key name="show-disk" type="b">
+      <default>false</default>
+      <summary>Show disk usage</summary>
+    </key>
+    <key name="disk-mount" type="s">
+      <default>'/'</default>
+      <summary>Mount point of the disk to show</summary>
+    </key>
+  </schema>
+</schemalist>

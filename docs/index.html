@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System Usage for GNOME</title>
+<meta name="description" content="Network speed, RAM and disk usage in the GNOME top bar. Counts hardware interfaces only, so VPN and Docker traffic is not double counted.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>System Usage</h1>
+  <p class="tagline">Network speed, RAM and disk usage in the GNOME top bar.</p>
+</header>
+
+<main>
+
+<figure>
+  <img src="system_stat_non_splitted.png" alt="GNOME top bar showing upload, download, RAM and disk in one indicator">
+  <figcaption>One tile.</figcaption>
+</figure>
+
+<figure>
+  <img src="system_stats.png" alt="GNOME top bar with RAM and disk on the left and network speed on the right">
+  <figcaption>Or split, each tile placed on its own side.</figcaption>
+</figure>
+
+<section>
+  <h2>Why</h2>
+  <p>
+    Most panel monitors sum every interface in <code>/proc/net/dev</code>. With a
+    VPN or Docker running, the same bytes are counted on the tunnel and again on
+    the physical NIC, so a real 2.5 MB/s reads as about 6 MB/s.
+  </p>
+  <p>
+    This one counts only interfaces backed by hardware, the ones with a
+    <code>/sys/class/net/&lt;if&gt;/device</code> link.
+  </p>
+</section>
+
+<section>
+  <h2>Settings</h2>
+  <p>Left, center or right for the whole set, or per tile once split. Disk usage is optional and reads any mounted filesystem you pick.</p>
+  <figure>
+    <img src="system_stats_settings.png" alt="Preferences window with layout and disk options">
+  </figure>
+</section>
+
+<section>
+  <h2>Install</h2>
+  <p>Requires GNOME Shell 50.</p>
+  <pre><code>git clone https://github.com/legitcoconut/gnome-system-stats
+ln -s "$PWD/gnome-system-stats" \
+  ~/.local/share/gnome-shell/extensions/system-usage@legitcoconut
+glib-compile-schemas \
+  ~/.local/share/gnome-shell/extensions/system-usage@legitcoconut/schemas
+gnome-extensions enable system-usage@legitcoconut</code></pre>
+  <p>Log out and back in on Wayland, or <kbd>Alt</kbd>+<kbd>F2</kbd> then <kbd>r</kbd> on X11.</p>
+</section>
+
+</main>
+
+<footer>
+  <p>
+    <a href="https://github.com/legitcoconut/gnome-system-stats">github.com/legitcoconut/gnome-system-stats</a><br>
+    GPL-2.0-or-later. Adithyan P.
+  </p>
+</footer>
+
+</body>
+</html>
