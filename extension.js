@@ -15,7 +15,7 @@ export default class SystemUsageExtension extends Extension {
         this._indicators = [];
         this._build();
 
-        this._settingsId = this._settings.connect('changed', () => this._build());
+        this._settings.connectObject('changed', () => this._build(), this);
         this._timeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
             this._update();
             return GLib.SOURCE_CONTINUE;
@@ -84,8 +84,7 @@ export default class SystemUsageExtension extends Extension {
     disable() {
         GLib.Source.remove(this._timeout);
         this._timeout = null;
-        this._settings.disconnect(this._settingsId);
-        this._settingsId = null;
+        this._settings.disconnectObject(this);
         this._clear();
         this._settings = null;
         this._prev = null;
